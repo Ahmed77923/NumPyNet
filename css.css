@@ -1,0 +1,14 @@
+    :root {
+        --bg: #220707;
+        --bg-2: #681717;
+        --panel: rgba(150, 90, 90, 0.84);
+        --panel-strong: #151522;
+        --panel-border: rgba(148, 163, 184, 0.16);
+        --text: #ffffff;
+        --muted: #94A3B8;
+        --accent: #8B5CF6;
+        --accent-2: #A855F7;
+        --success: #10B981;
+        --warning: #F59E0B;
+        --danger: #EF4444;
+    }

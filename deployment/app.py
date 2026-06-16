@@ -24,6 +24,8 @@ from visualization.charts import (
     optimizer_comparison,
 )
 
+from visualization.visualize_network import visualize_network
+
 
 st.set_page_config(
     page_title="NumPyNet Studio",
@@ -38,13 +40,26 @@ st.markdown(
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
+    header {
+        visibility: hidden;
+    }
+
+    footer {
+        visibility: hidden;
+    }
+
+    header {
+        visibility: hidden;
+    },
+
+   , unsafe_allow_html=True)
     :root {
-        --bg: #0A0A12;
-        --bg-2: #0A0A12;
-        --panel: rgba(21, 21, 34, 0.84);
+        --bg: #220707;
+        --bg-2: #681717;
+        --panel: rgba(150, 90, 90, 0.84);
         --panel-strong: #151522;
         --panel-border: rgba(148, 163, 184, 0.16);
-        --text: #F8FAFC;
+        --text: #ffffff;
         --muted: #94A3B8;
         --accent: #8B5CF6;
         --accent-2: #A855F7;
@@ -297,7 +312,7 @@ def render_training_panel():
     c1, c2, c3 = st.columns(3)
     with c1:
         learning_rate = st.slider("Learning Rate", 0.0001, 0.1, 0.01, 0.0001)
-        epochs = st.number_input("Epochs", min_value=10, max_value=2000, value=200, step=10)
+        epochs = st.number_input("Epochs", min_value=10, max_value=2000, value=200, step=100)
     with c2:
         batch_size = st.selectbox("Batch Size", [8, 16, 32, 64, 128], index=2)
         loss_fn = st.selectbox("Loss Function", list(LOSS_FUNCTIONS.keys()), index=0)
@@ -346,29 +361,10 @@ def render_training_panel():
     }
 
 
-# def render_dataset_panel(dataset_name: str, dataset_kwargs: dict):
-#     st.markdown("<div class='section-heading'>Dataset</div>", unsafe_allow_html=True)
-#     st.session_state.dataset_name = dataset_name
-#     # dataset_preview = st.radio("Choose Dataset", list(DATASETS.keys()), horizontal=True, index=list(DATASETS.keys()).index(dataset_name))
-#     if dataset_preview != dataset_name:
-#         st.session_state.dataset_name = dataset_preview
-#     result = st.session_state.training_result
-#     if result is None:
-#         from deployment.services.numpy_net_backend import load_dataset
-#         X, y = load_dataset(dataset_preview, **dataset_kwargs)
-#     else:
-#         X, y = result.X, result.y
-#     import plotly.graph_objects as go
-#     fig = go.Figure()
-#     fig.add_trace(go.Scatter(x=X[:, 0], y=X[:, 1], mode="markers", marker=dict(color=y.ravel(), size=7, colorscale=[[0, "#38bdf8"], [1, "#8b5cf6"]], opacity=0.9), name="Samples"))
-#     fig.update_layout(margin=dict(l=0, r=0, t=0, b=0), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis=dict(showgrid=False, zeroline=False, visible=False), yaxis=dict(showgrid=False, zeroline=False, visible=False), height=280, showlegend=False)
-#     st.plotly_chart(fig, use_container_width=True)
-#     st.caption(f"Preview of {dataset_preview.lower()} for quick visual inspection and experimentation.")
-
 
 def render_visualization_panel():
     st.markdown("<div class='section-heading'>Visualization Area</div>", unsafe_allow_html=True)
-    tab1, tab2, tab3, tab4 = st.tabs(["Decision Boundary", "Loss Curve", "Accuracy Curve", "Optimizer Comparison"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Decision Boundary", "Loss Curve", "Accuracy Curve",'Network Visualization']) # i will add "Optimizer Comparison" in future updates
     result = st.session_state.training_result
 
     with tab1:
@@ -388,7 +384,10 @@ def render_visualization_panel():
         else:
             st.plotly_chart(accuracy_curve(result.history), use_container_width=True)
     with tab4:
-        st.plotly_chart(optimizer_comparison(result.metrics), use_container_width=True)
+        if result is None:
+            st.info("Train a model to show the accuracy curve.")
+        else:
+            st.plotly_chart(visualize_network(result.model), use_container_width=True)
 
 
 def render_metrics_panel():
@@ -455,50 +454,14 @@ def render_model_summary():
                 unsafe_allow_html=True,
             )
 
-    rows_html = """
-    <div class='glass-panel' style='padding:0.4rem 0.5rem 0.6rem 0.5rem;'>
-        <table style='width:100%; border-collapse:collapse; color:#e2e8f0;'>
-            <thead>
-                <tr style='text-align:left; color:#94a3b8; border-bottom:1px solid rgba(148,163,184,0.18);'>
-                    <th style='padding:0.85rem 0.75rem;'>#</th>
-                    <th style='padding:0.85rem 0.75rem;'>Layer Name</th>
-                    <th style='padding:0.85rem 0.75rem;'>Input Shape</th>
-                    <th style='padding:0.85rem 0.75rem;'>Output Shape</th>
-                    <th style='padding:0.85rem 0.75rem;'>Activation</th>
-                    <th style='padding:0.85rem 0.75rem;'>Regularizer</th>
-                    <th style='padding:0.85rem 0.75rem;'>Parameters</th>
-                </tr>
-            </thead>
-            <tbody>
-    """
-    for row in summary["rows"]:
-        rows_html += f"""
-            <tr style='border-bottom:1px solid rgba(148,163,184,0.08);'>
-                <td style='padding:0.85rem 0.75rem; color:#7dd3fc; font-weight:700;'>{row['index']}</td>
-                <td style='padding:0.85rem 0.75rem;'>{row['layer']}</td>
-                <td style='padding:0.85rem 0.75rem;'>{row['input_shape']}</td>
-                <td style='padding:0.85rem 0.75rem;'>{row['output_shape']}</td>
-                <td style='padding:0.85rem 0.75rem;'>{row['activation']}</td>
-                <td style='padding:0.85rem 0.75rem;'>{row['regularizer']}</td>
-                <td style='padding:0.85rem 0.75rem; font-weight:700;'>{row['parameters']}</td>
-            </tr>
-        """
-    rows_html += f"""
-            </tbody>
-        </table>
-        <div style='margin-top:12px; color:#7dd3fc; font-weight:700; letter-spacing:0.02em;'>Total Parameters: {summary['total_parameters']:,}</div>
-    </div>
-    """
-    st.markdown(rows_html, unsafe_allow_html=True)
-
 
 def render_console():
     st.markdown("<div class='section-heading'>Bottom Console</div>", unsafe_allow_html=True)
     result = st.session_state.training_result
     if result is None:
-        logs = ["[idle] Waiting for training to start..."]
+        logs = ["Waiting for training to start..."]
     else:
-        logs = result.logs[-30:]
+        logs = result.logs[::10]
     st.markdown(f"<div class='console-box'>{'<br>'.join(logs)}</div>", unsafe_allow_html=True)
 
 

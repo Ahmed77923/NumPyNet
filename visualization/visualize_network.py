@@ -1,9 +1,8 @@
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 
 
 def visualize_network(model):
 
-    # Build network shape
     layers = [model.layers[0].input_size]
 
     for layer in model.layers:
@@ -11,17 +10,90 @@ def visualize_network(model):
 
     max_neurons = max(layers)
 
-    fig, ax = plt.subplots(figsize=(14, 8))
-
-    x_spacing = 4
-
     colors = [
-        "#3B82F6",  # Input
-        "#10B981",  # Hidden
-        "#10B981",
-        "#EF4444"   # Output
+        "#06B6D4",  # Input
+        "#8B5CF6",  # Hidden
+        "#8B5CF6",
+        "#EC4899"   # Output
     ]
 
+    fig = go.Figure()
+
+    positions = []
+
+    x_spacing = 3
+
+    # Neurons
+    for layer_idx, neurons in enumerate(layers):
+
+        x = layer_idx * x_spacing
+
+        neuron_positions = []
+
+        for neuron_idx in range(neurons):
+
+            y = neuron_idx - (neurons - 1) / 2
+
+            neuron_positions.append((x, y))
+
+        positions.append(neuron_positions)
+
+    # Connections
+    for layer_idx in range(len(positions) - 1):
+
+        current_layer = positions[layer_idx]
+        next_layer = positions[layer_idx + 1]
+
+        for x1, y1 in current_layer:
+            for x2, y2 in next_layer:
+
+                fig.add_trace(
+                    go.Scatter(
+                        x=[x1, x2],
+                        y=[y1, y2],
+                        mode="lines",
+                        line=dict(
+                            color="rgba(148,163,184,0.15)",
+                            width=1
+                        ),
+                        hoverinfo="skip",
+                        showlegend=False
+                    )
+                )
+
+    # Nodes
+    for layer_idx, neuron_positions in enumerate(positions):
+
+        color = colors[
+            min(layer_idx, len(colors) - 1)
+        ]
+
+        x_vals = [p[0] for p in neuron_positions]
+        y_vals = [p[1] for p in neuron_positions]
+
+        fig.add_trace(
+            go.Scatter(
+                x=x_vals,
+                y=y_vals,
+                mode="markers",
+                marker=dict(
+                    size=24,
+                    color=color,
+                    line=dict(
+                        color="white",
+                        width=1
+                    )
+                ),
+                hovertemplate=(
+                    f"Layer {layer_idx}<br>"
+                    "Neuron %{pointNumber}"
+                    "<extra></extra>"
+                ),
+                showlegend=False
+            )
+        )
+
+    # Layer labels
     layer_names = []
 
     for i in range(len(layers)):
@@ -37,98 +109,34 @@ def visualize_network(model):
                 f"Hidden {i}"
             )
 
-    positions = []
+    for i, name in enumerate(layer_names):
 
-    # Draw neurons
-    for layer_idx, neurons in enumerate(layers):
-
-        x = layer_idx * x_spacing
-
-        color = colors[
-            min(layer_idx, len(colors) - 1)
-        ]
-
-        neuron_positions = []
-
-        for neuron_idx in range(neurons):
-
-            y = (
-                neuron_idx
-                - (neurons - 1) / 2
-            )
-
-            neuron_positions.append(
-                (x, y)
-            )
-
-            circle = plt.Circle(
-                (x, y),
-                0.25,
-                color=color,
-                ec="black",
-                lw=1.5
-            )
-
-            ax.add_patch(circle)
-
-        positions.append(
-            neuron_positions
+        fig.add_annotation(
+            x=i * x_spacing,
+            y=max_neurons / 2 + 1.5,
+            text=f"{name}<br>{layers[i]} neurons",
+            showarrow=False,
+            font=dict(size=13)
         )
 
-        # Layer title
-        ax.text(
-            x,
-            max_neurons / 2 + 1,
-            layer_names[layer_idx],
-            ha="center",
-            fontsize=13,
-            fontweight="bold"
+    fig.update_layout(
+        title="Neural Network Architecture",
+        height=650,
+        paper_bgcolor="#0A0A12",
+        plot_bgcolor="#0A0A12",
+        margin=dict(
+            l=20,
+            r=20,
+            t=60,
+            b=20
+        ),
+        xaxis=dict(
+            visible=False
+        ),
+        yaxis=dict(
+            visible=False,
+            scaleanchor="x"
         )
-
-        # Neuron count
-        ax.text(
-            x,
-            -(max_neurons / 2) - 1,
-            f"{neurons} neurons",
-            ha="center",
-            fontsize=10
-        )
-
-    # Draw connections
-    for layer_idx in range(
-        len(positions) - 1
-    ):
-
-        current_layer = positions[
-            layer_idx
-        ]
-
-        next_layer = positions[
-            layer_idx + 1
-        ]
-
-        for x1, y1 in current_layer:
-
-            for x2, y2 in next_layer:
-
-                ax.plot(
-                    [x1, x2],
-                    [y1, y2],
-                    color="gray",
-                    alpha=0.08,
-                    linewidth=0.8
-                )
-
-    plt.title(
-        "Neural Network Architecture",
-        fontsize=18,
-        fontweight="bold",
-        pad=20
     )
 
-    ax.set_aspect("equal")
-    ax.axis("off")
-
-    plt.tight_layout()
-
-    plt.show()
+    return fig

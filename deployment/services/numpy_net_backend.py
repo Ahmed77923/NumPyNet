@@ -9,22 +9,29 @@ import contextlib
 import numpy as np
 
 from core.DenseLayer import DenseLayer
+
 from Initializer.He import He
 from Initializer.xavier import Xavier
 from Initializer.random import Random
 from Initializer.zero import Zero
+
 from layers.model import Model
+
 from losses.mse import MSE
 from losses.binary_cross_entropy import BinaryCrossEntropy
+
 from optimizers.sgd import SGD
 from optimizers.momentum import Momentum
 from optimizers.rmsprop import RMSProp
 from optimizers.adam import Adam
+
 from regularization.l1 import L1
 from regularization.l2 import L2
+
 from datasets.moons import Moons
 from datasets.circles import Circles
 from datasets.blobs import Blobs
+
 from core.trainer import Trainer
 
 
